@@ -1,0 +1,134 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String
+  price       Float
+  comparePrice Float?
+  images      String[]
+  category    String   @default("tee")
+  tags        String[]
+  featured    Boolean  @default(false)
+  published   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  variants    ProductVariant[]
+  orderItems  OrderItem[]
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color     String
+  size      String
+  stock     Int     @default(0)
+  sku       String  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([productId, color, size])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  address   Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  customerId      String?
+  customer        Customer?   @relation(fields: [customerId], references: [id])
+  email           String
+  name            String
+  phone           String?
+  status          OrderStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(UNPAID)
+  total           Float
+  subtotal        Float
+  shippingCost    Float       @default(0)
+  stripePaymentId String?
+  stripeSessionId String?
+  shippingAddress Json
+  notes           String?
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  variantId String?
+  quantity  Int
+  price     Float
+  color     String?
+  size      String?
+}
+
+model BlogPost {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  content   String
+  excerpt   String
+  image     String?
+  tags      String[]
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+}
+
+model SiteSettings {
+  id            String @id @default("settings")
+  storeName     String @default("Banjaran")
+  storeEmail    String @default("hello@banjaran.my")
+  currency      String @default("MYR")
+  shippingRates Json   @default("{}")
+  announcement  String?
+  updatedAt     DateTime @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
