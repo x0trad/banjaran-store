@@ -1,10 +1,10 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { useCart } from '@/store/cart'
 import { formatPrice } from '@/lib/utils'
-import { ShoppingCart, ChevronLeft, Check, Truck, RefreshCw } from 'lucide-react'
+import { ShoppingCart, ChevronLeft, ChevronRight, Check, Truck, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/cn'
@@ -29,6 +29,21 @@ export default function ProductPage() {
   const [currentImage, setCurrentImage]   = useState(0)
   const [adding, setAdding]           = useState(false)
   const { addItem } = useCart()
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const scrollToImage = useCallback((index: number) => {
+    const container = scrollRef.current
+    if (!container) return
+    container.scrollTo({ left: index * container.offsetWidth, behavior: 'smooth' })
+    setCurrentImage(index)
+  }, [])
+
+  const handleScroll = useCallback(() => {
+    const container = scrollRef.current
+    if (!container) return
+    const index = Math.round(container.scrollLeft / container.offsetWidth)
+    setCurrentImage(index)
+  }, [])
 
   useEffect(() => {
     fetch(`/api/products/${slug}`)
@@ -90,13 +105,13 @@ export default function ProductPage() {
 
       {/* ── Snap Image Carousel ── */}
       <section className="relative w-full bg-surface-container-low" role="region" aria-label="Product images">
-        <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar"
+        >
           {product.images.length > 0 ? product.images.map((img: string, i: number) => (
-            <div
-              key={i}
-              className="flex-none w-full h-[580px] snap-center p-4"
-              onScroll={() => {}}
-            >
+            <div key={i} className="flex-none w-full h-[580px] snap-center p-4">
               <Image
                 src={img}
                 alt={`${product.name} — image ${i + 1}`}
@@ -123,6 +138,28 @@ export default function ProductPage() {
           <ChevronLeft className="w-5 h-5 text-on-surface" aria-hidden="true" />
         </Link>
 
+        {/* Prev / Next arrows — only shown when there are multiple images */}
+        {product.images.length > 1 && (
+          <>
+            <button
+              onClick={() => scrollToImage(Math.max(0, currentImage - 1))}
+              aria-label="Previous image"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-surface/80 backdrop-blur-sm flex items-center justify-center rounded-full shadow active:bg-surface disabled:opacity-30 transition-opacity"
+              disabled={currentImage === 0}
+            >
+              <ChevronLeft className="w-5 h-5 text-on-surface" aria-hidden="true" />
+            </button>
+            <button
+              onClick={() => scrollToImage(Math.min(product.images.length - 1, currentImage + 1))}
+              aria-label="Next image"
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-surface/80 backdrop-blur-sm flex items-center justify-center rounded-full shadow active:bg-surface disabled:opacity-30 transition-opacity"
+              disabled={currentImage === product.images.length - 1}
+            >
+              <ChevronRight className="w-5 h-5 text-on-surface" aria-hidden="true" />
+            </button>
+          </>
+        )}
+
         {/* Dash indicators */}
         {product.images.length > 1 && (
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2" role="tablist" aria-label="Product images">
@@ -132,7 +169,7 @@ export default function ProductPage() {
                 role="tab"
                 aria-label={`Image ${i + 1}`}
                 aria-selected={i === currentImage}
-                onClick={() => setCurrentImage(i)}
+                onClick={() => scrollToImage(i)}
                 className={cn(
                   'h-0.5 rounded-sm transition-all duration-300',
                   i === currentImage ? 'w-8 bg-primary' : 'w-8 bg-outline-variant/30'
