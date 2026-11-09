@@ -1,12 +1,12 @@
 'use client'
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { CheckCircle, ShoppingBag, Home, Mail } from 'lucide-react'
 import Link from 'next/link'
 import { useCart } from '@/store/cart'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const { clearCart } = useCart()
   const searchParams = useSearchParams()
   const orderNumber = searchParams.get('order')
@@ -63,5 +63,19 @@ export default function OrderSuccessPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="px-5 pb-24 pt-12 text-center max-w-md mx-auto">
+        <div className="flex justify-center mb-5">
+          <div className="w-16 h-16 rounded-full bg-stone-100 animate-pulse" />
+        </div>
+      </div>
+    }>
+      <OrderSuccessContent />
+    </Suspense>
   )
 }
