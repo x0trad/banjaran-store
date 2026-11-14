@@ -166,6 +166,49 @@ export const tools: McpTool[] = [
     },
   },
 
+  {
+    name: 'add_variant',
+    description: 'Add a new colour/size variant to a product (e.g. a 3XL size). Fails if that colour+size already exists. SKU is generated from the product if omitted.',
+    inputSchema: {
+      type: 'object',
+      required: ['productId', 'color', 'size', 'stock'],
+      properties: {
+        productId: { type: 'string' },
+        color: { type: 'string', description: 'Must match the existing colour name exactly, e.g. "Black"' },
+        size: { type: 'string', description: 'e.g. "3XL", "S/M"' },
+        stock: { type: 'integer', minimum: 0 },
+        sku: { type: 'string' },
+      },
+    },
+    handler: async (a) => {
+      if (!Number.isInteger(a.stock) || a.stock < 0) throw new Error('stock must be a non-negative integer')
+      const product = await prisma.product.findUnique({ where: { id: a.productId }, include: { variants: true } })
+      if (!product) throw new Error('Product not found')
+      if (product.variants.some((v) => v.color === a.color && v.size === a.size)) throw new Error(`${a.color} ${a.size} already exists — use set_stock instead`)
+      let sku = a.sku
+      if (!sku) {
+        const prefix = product.variants[0]?.sku.split('-')[0] || product.slug
+        sku = `${prefix}-${String(a.color).slice(0, 3)}-${String(a.size).replace(/\//g, '')}`.toUpperCase()
+      }
+      const v = await prisma.productVariant.create({ data: { productId: product.id, color: a.color, size: a.size, stock: a.stock, sku } })
+      return { variantId: v.id, sku: v.sku, product: product.name, color: v.color, size: v.size, stock: v.stock }
+    },
+  },
+  {
+    name: 'delete_variant',
+    description: 'Permanently remove a colour/size variant from a product (e.g. a size you no longer sell). Past orders are kept. Identify by variantId or sku.',
+    inputSchema: {
+      type: 'object',
+      properties: { variantId: { type: 'string' }, sku: { type: 'string' } },
+    },
+    handler: async (a) => {
+      const v = await findVariant(a)
+      if (!v) throw new Error('Variant not found')
+      await prisma.productVariant.delete({ where: { id: v.id } })
+      return { deleted: true, sku: v.sku, product: v.product.name, color: v.color, size: v.size, stockAtDeletion: v.stock }
+    },
+  },
+
   // ---------- Orders ----------
   {
     name: 'list_orders',

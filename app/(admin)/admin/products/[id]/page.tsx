@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import ImageUpload from '@/components/admin/ImageUpload'
 
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+const SIZES = ['XS', 'S', 'S/M', 'M', 'L', 'L/XL', 'XL', 'XXL', '3XL', '4XL']
 const COLORS = ['White', 'Black', 'Navy', 'Forest', 'Stone', 'Cream']
 const emptyVariant = { color: 'White', size: 'M', stock: 0, sku: '' }
 const selectClass = 'flex h-11 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-banjaran-700 touch-manipulation'

@@ -9,7 +9,12 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/cn'
 
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL']
+// Display order for sizes. Each product shows only the sizes it actually has.
+const SIZE_ORDER = ['XS', 'S', 'S/M', 'M', 'L', 'L/XL', 'XL', 'XXL', '2XL', '3XL', '4XL']
+const sizeRank = (s: string) => {
+  const i = SIZE_ORDER.indexOf(s)
+  return i === -1 ? SIZE_ORDER.length : i
+}
 
 const COLOR_MAP: Record<string, string> = {
   white:  '#ffffff',
@@ -79,6 +84,8 @@ export default function ProductPage() {
   }
 
   const colors          = Array.from(new Set(product.variants.map((v: any) => v.color))) as string[]
+  const productSizes    = (Array.from(new Set(product.variants.map((v: any) => v.size))) as string[])
+    .sort((a, b) => sizeRank(a) - sizeRank(b))
   const sizesForColor   = product.variants.filter((v: any) => v.color === selectedColor).map((v: any) => v.size)
   const selectedVariant = product.variants.find((v: any) => v.color === selectedColor && v.size === selectedSize)
   const stockForVariant = selectedVariant?.stock ?? 0
@@ -240,7 +247,7 @@ export default function ProductPage() {
             </button>
           </div>
           <div className="grid grid-cols-4 gap-2" role="radiogroup" aria-label="Select size">
-            {SIZES.map((size) => {
+            {productSizes.map((size) => {
               const available = sizesForColor.includes(size)
               const variant   = product.variants.find((v: any) => v.color === selectedColor && v.size === size)
               const inStock   = variant && variant.stock > 0
