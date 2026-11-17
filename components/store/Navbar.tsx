@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingBag, Menu, Home, Search, BookOpen, User } from 'lucide-react'
+import { ShoppingBag, Menu, Home, Search, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useCart, cartCount } from '@/store/cart'
@@ -11,14 +11,12 @@ import { cn } from '@/lib/cn'
 const drawerLinks = [
   { href: '/',        label: 'Home'    },
   { href: '/shop',    label: 'Shop'    },
-  { href: '/blog',    label: 'Journal' },
   { href: '/about',   label: 'About'   },
 ]
 
 const bottomTabItems = [
   { href: '/',      label: 'Store',   icon: Home     },
   { href: '/shop',  label: 'Shop',    icon: Search   },
-  { href: '/blog',  label: 'Journal', icon: BookOpen },
   { href: '/account', label: 'Account', icon: User   },
 ]
 

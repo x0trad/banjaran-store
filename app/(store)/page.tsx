@@ -130,13 +130,6 @@ export default async function HomePage() {
             <p className="font-body text-sm text-on-surface-variant leading-relaxed">
               Field notes, expedition guides, and gear journals written by the community.
             </p>
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-2 label-caps text-on-background group active:text-primary"
-            >
-              Read the Journal
-              <ArrowUpRight className="w-4 h-4 transition-transform group-active:translate-x-0.5 group-active:-translate-y-0.5" aria-hidden="true" />
-            </Link>
           </div>
         </div>
       </section>
