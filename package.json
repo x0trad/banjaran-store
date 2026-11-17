@@ -12,24 +12,25 @@
     "db:seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@headlessui/react": "^1.7.18",
     "@prisma/client": "^5.10.0",
     "@stripe/react-stripe-js": "^2.4.0",
     "@stripe/stripe-js": "^3.0.0",
+    "@vercel/analytics": "^1.6.1",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.0",
+    "date-fns": "^3.3.1",
     "jose": "^5.2.2",
+    "lucide-react": "^0.344.0",
     "next": "14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "resend": "^3.1.0",
-    "stripe": "^14.17.0",
-    "zustand": "^4.5.1",
-    "lucide-react": "^0.344.0",
-    "date-fns": "^3.3.1",
     "react-hot-toast": "^2.4.1",
+    "resend": "^3.1.0",
+    "sharp": "^0.33.2",
+    "stripe": "^14.17.0",
     "tailwind-merge": "^2.2.1",
-    "@headlessui/react": "^1.7.18",
-    "sharp": "^0.33.2"
+    "zustand": "^4.5.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
