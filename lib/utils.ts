@@ -37,3 +37,17 @@ export function calculateShipping(subtotal: number, state?: string): number {
   // West Malaysia standard
   return 8
 }
+
+// ---- Fulfilment: delivery (default) or free self pickup ----
+export const PICKUP_LOCATIONS = {
+  'pickup-ipoh': 'Ipoh, Perak',
+  'pickup-putrajaya': 'Putrajaya',
+} as const
+export type Fulfilment = 'delivery' | keyof typeof PICKUP_LOCATIONS
+export const isPickup = (f: unknown): f is keyof typeof PICKUP_LOCATIONS =>
+  typeof f === 'string' && f in PICKUP_LOCATIONS
+
+/** Shape stored in Order.shippingAddress */
+export type OrderFulfilment =
+  | { method?: 'delivery'; line1: string; line2?: string; city: string; state: string; postcode: string }
+  | { method: 'pickup'; pickupLocation: string }

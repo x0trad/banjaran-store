@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { sendOrderConfirmation } from '@/lib/email'
+import type { OrderFulfilment } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -52,9 +53,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Send confirmation email
-      const shippingAddress = order.shippingAddress as {
-        line1: string; line2?: string; city: string; state: string; postcode: string
-      }
+      const shippingAddress = order.shippingAddress as unknown as OrderFulfilment
 
       await sendOrderConfirmation({
         to: order.email,

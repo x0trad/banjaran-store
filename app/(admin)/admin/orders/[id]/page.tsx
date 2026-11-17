@@ -162,15 +162,24 @@ export default function OrderDetailPage() {
           <Card>
             <CardHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b border-stone-100 flex-row items-center gap-2">
               <MapPin className="w-4 h-4 text-stone-400" />
-              <CardTitle className="text-sm">Shipping Address</CardTitle>
+              <CardTitle className="text-sm">
+                {order.shippingAddress?.method === 'pickup' ? 'Self Pickup' : 'Shipping Address'}
+              </CardTitle>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 py-3">
-              <address className="not-italic text-sm text-stone-600 leading-relaxed">
-                {order.address}<br />
-                {order.address2 && <>{order.address2}<br /></>}
-                {order.postcode} {order.city}<br />
-                {order.state}
-              </address>
+              {order.shippingAddress?.method === 'pickup' ? (
+                <p className="text-sm text-stone-600">
+                  Customer collects in <strong>{order.shippingAddress.pickupLocation}</strong>.
+                  {order.phone ? ` Contact them on ${order.phone} to arrange.` : ''}
+                </p>
+              ) : (
+                <address className="not-italic text-sm text-stone-600 leading-relaxed">
+                  {order.shippingAddress?.line1}<br />
+                  {order.shippingAddress?.line2 && <>{order.shippingAddress.line2}<br /></>}
+                  {order.shippingAddress?.postcode} {order.shippingAddress?.city}<br />
+                  {order.shippingAddress?.state}
+                </address>
+              )}
             </CardContent>
           </Card>
         </div>

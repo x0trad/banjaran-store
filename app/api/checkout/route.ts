@@ -1,15 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
-import { generateOrderNumber, calculateShipping } from '@/lib/utils'
+import { generateOrderNumber, calculateShipping, PICKUP_LOCATIONS, isPickup } from '@/lib/utils'
 
 export async function POST(req: NextRequest) {
   try {
-    const { items, customerInfo } = await req.json()
+    const { items, customerInfo, fulfilment = 'delivery' } = await req.json()
 
     if (!items?.length) {
       return NextResponse.json({ error: 'No items in cart' }, { status: 400 })
     }
+    const pickup = isPickup(fulfilment)
+    if (!pickup && fulfilment !== 'delivery') {
+      return NextResponse.json({ error: 'Invalid delivery method' }, { status: 400 })
+    }
+    if (!customerInfo?.email || !customerInfo?.name) {
+      return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
+    }
+    if (pickup && !customerInfo.phone) {
+      return NextResponse.json({ error: 'Phone number is required for self pickup' }, { status: 400 })
+    }
+    if (!pickup && (!customerInfo.address || !customerInfo.city || !customerInfo.state || !customerInfo.postcode)) {
+      return NextResponse.json({ error: 'Please complete your shipping address' }, { status: 400 })
+    }
+    const shippingAddress = pickup
+      ? { method: 'pickup' as const, pickupLocation: PICKUP_LOCATIONS[fulfilment] }
+      : {
+          method: 'delivery' as const,
+          line1: customerInfo.address,
+          line2: customerInfo.address2 || '',
+          city: customerInfo.city,
+          state: customerInfo.state,
+          postcode: customerInfo.postcode,
+        }
 
     // Validate stock and get current prices from DB
     const validatedItems = []
@@ -34,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     const subtotal = validatedItems.reduce((sum, i) => sum + i.price * i.quantity, 0)
-    const shippingCost = calculateShipping(subtotal, customerInfo?.state)
+    const shippingCost = pickup ? 0 : calculateShipping(subtotal, customerInfo?.state)
     const total = subtotal + shippingCost
 
     const orderNumber = generateOrderNumber()
@@ -73,13 +96,8 @@ export async function POST(req: NextRequest) {
         customerEmail: customerInfo?.email || '',
         customerName: customerInfo?.name || '',
         customerPhone: customerInfo?.phone || '',
-        shippingAddress: JSON.stringify({
-          line1: customerInfo?.address,
-          line2: customerInfo?.address2 || '',
-          city: customerInfo?.city,
-          state: customerInfo?.state,
-          postcode: customerInfo?.postcode,
-        }),
+        fulfilment: pickup ? `Self pickup — ${PICKUP_LOCATIONS[fulfilment]}` : 'Delivery',
+        shippingAddress: JSON.stringify(shippingAddress),
         items: JSON.stringify(validatedItems.map((i) => ({
           productId: i.productId,
           variantId: i.variantId,
@@ -118,13 +136,8 @@ export async function POST(req: NextRequest) {
         shippingCost,
         total,
         stripeSessionId: session.id,
-        shippingAddress: {
-          line1: customerInfo.address,
-          line2: customerInfo.address2 || '',
-          city: customerInfo.city,
-          state: customerInfo.state,
-          postcode: customerInfo.postcode,
-        },
+        shippingAddress,
+        ...(pickup && { notes: `Self pickup — ${PICKUP_LOCATIONS[fulfilment]}` }),
         items: {
           create: validatedItems.map((item) => ({
             productId: item.productId,

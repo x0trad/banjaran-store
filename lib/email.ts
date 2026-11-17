@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import type { OrderFulfilment } from '@/lib/utils'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -10,13 +11,7 @@ interface OrderEmailProps {
   subtotal: number
   shippingCost: number
   total: number
-  shippingAddress: {
-    line1: string
-    line2?: string
-    city: string
-    state: string
-    postcode: string
-  }
+  shippingAddress: OrderFulfilment
 }
 
 export async function sendOrderConfirmation(props: OrderEmailProps) {
@@ -36,6 +31,15 @@ export async function sendOrderConfirmation(props: OrderEmailProps) {
       </tr>`
     )
     .join('')
+
+  const a = props.shippingAddress
+  const addressHtml = a.method === 'pickup'
+    ? `<div class="label">Self Pickup</div><p style="margin: 8px 0 0;">${a.pickupLocation}</p>`
+    : `<div class="label">Shipping To</div><p style="margin: 8px 0 0;">
+              ${a.line1}<br>
+              ${a.line2 ? a.line2 + '<br>' : ''}
+              ${a.city}, ${a.state} ${a.postcode}
+            </p>`
 
   const html = `
     <!DOCTYPE html>
@@ -97,16 +101,13 @@ export async function sendOrderConfirmation(props: OrderEmailProps) {
           </div>
 
           <div class="section" style="background: #f0f9f4; padding: 16px; border-radius: 8px;">
-            <div class="label">Shipping To</div>
-            <p style="margin: 8px 0 0;">
-              ${props.shippingAddress.line1}<br>
-              ${props.shippingAddress.line2 ? props.shippingAddress.line2 + '<br>' : ''}
-              ${props.shippingAddress.city}, ${props.shippingAddress.state} ${props.shippingAddress.postcode}
-            </p>
+            ${addressHtml}
           </div>
 
           <p style="color: #78716c; font-size: 14px;">
-            You'll receive a shipping notification with tracking details once your order is on its way.
+            ${props.shippingAddress.method === 'pickup'
+              ? "We'll WhatsApp or email you to arrange a collection time."
+              : "You'll receive a shipping notification with tracking details once your order is on its way."}
             Questions? Reply to this email or reach us at <a href="mailto:hello@banjaran.my" style="color: #267553;">hello@banjaran.my</a>
           </p>
         </div>

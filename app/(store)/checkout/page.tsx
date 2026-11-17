@@ -3,8 +3,8 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCart, cartTotal } from '@/store/cart'
-import { formatPrice, calculateShipping } from '@/lib/utils'
-import { ChevronLeft, Lock, Truck, ShieldCheck } from 'lucide-react'
+import { formatPrice, calculateShipping, PICKUP_LOCATIONS, isPickup, type Fulfilment } from '@/lib/utils'
+import { ChevronLeft, Lock, Truck, ShieldCheck, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -26,8 +26,12 @@ export default function CheckoutPage() {
     address: '', address2: '', city: '', state: '', postcode: '',
   })
   const [showSummary, setShowSummary] = useState(false)
+  const [fulfilment, setFulfilment] = useState<Fulfilment>('delivery')
+  const pickup = isPickup(fulfilment)
+  const pickupLocation = pickup ? PICKUP_LOCATIONS[fulfilment] : null
+  const shippingLabel = pickup ? 'Self pickup' : 'Shipping'
 
-  const shippingCost = calculateShipping(total, form.state)
+  const shippingCost = pickup ? 0 : calculateShipping(total, form.state)
   const grandTotal = total + shippingCost
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -38,7 +42,9 @@ export default function CheckoutPage() {
     e.preventDefault()
     if (!items.length) return toast.error('Your cart is empty')
 
-    const required = ['name', 'email', 'address', 'city', 'state', 'postcode'] as const
+    const required = pickup
+      ? (['name', 'email', 'phone'] as const)
+      : (['name', 'email', 'address', 'city', 'state', 'postcode'] as const)
     for (const field of required) {
       if (!form[field]) return toast.error(`Please fill in your ${field}`)
     }
@@ -48,7 +54,7 @@ export default function CheckoutPage() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, customerInfo: form }),
+        body: JSON.stringify({ items, customerInfo: form, fulfilment }),
       })
       const data = await res.json()
       if (data.url) {
@@ -122,7 +128,7 @@ export default function CheckoutPage() {
                 <span>{formatPrice(total)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-stone-500">Shipping</span>
+                <span className="text-stone-500">{shippingLabel}</span>
                 <span>{shippingCost === 0 ? 'FREE' : formatPrice(shippingCost)}</span>
               </div>
             </div>
@@ -151,14 +157,49 @@ export default function CheckoutPage() {
                     <Input name="email" type="email" value={form.email} onChange={handleChange} required autoComplete="email" />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-stone-500 mb-1 block">Phone</label>
-                    <Input name="phone" value={form.phone} onChange={handleChange} placeholder="+60 12-xxx xxxx" autoComplete="tel" />
+                    <label className="text-xs font-medium text-stone-500 mb-1 block">Phone{pickup ? ' *' : ''}</label>
+                    <Input name="phone" value={form.phone} onChange={handleChange} required={pickup} placeholder="+60 12-xxx xxxx" autoComplete="tel" />
                   </div>
                 </div>
               </div>
             </div>
 
+            {/* Delivery method */}
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold uppercase tracking-widest mb-3">Delivery Method</h2>
+              <div className="space-y-2" role="radiogroup" aria-label="Delivery method">
+                {([
+                  { value: 'delivery', title: 'Delivery', desc: 'Poslaju to your address · RM8 West / RM15 East Malaysia · free above RM150', Icon: Truck },
+                  { value: 'pickup-ipoh', title: `Self pickup — ${PICKUP_LOCATIONS['pickup-ipoh']}`, desc: "Free · we'll contact you to arrange collection", Icon: Store },
+                  { value: 'pickup-putrajaya', title: `Self pickup — ${PICKUP_LOCATIONS['pickup-putrajaya']}`, desc: "Free · we'll contact you to arrange collection", Icon: Store },
+                ] as const).map(({ value, title, desc, Icon }) => {
+                  const selected = fulfilment === value
+                  return (
+                    <label
+                      key={value}
+                      className={`flex items-start gap-3 rounded-lg border-2 p-3 cursor-pointer touch-manipulation transition-colors ${selected ? 'border-banjaran-700 bg-banjaran-50' : 'border-stone-200 hover:border-stone-300'}`}
+                    >
+                      <input
+                        type="radio"
+                        name="fulfilment"
+                        value={value}
+                        checked={selected}
+                        onChange={() => setFulfilment(value)}
+                        className="mt-1 accent-banjaran-700"
+                      />
+                      <Icon className="w-4 h-4 mt-0.5 text-banjaran-700 flex-shrink-0" aria-hidden="true" />
+                      <span className="flex-1">
+                        <span className="block text-sm font-medium">{title}</span>
+                        <span className="block text-xs text-stone-500 mt-0.5">{desc}</span>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+
             {/* Shipping */}
+            {!pickup && (
             <div className="mb-6">
               <h2 className="text-sm font-semibold uppercase tracking-widest mb-3">Shipping Address</h2>
               <div className="space-y-3">
@@ -196,17 +237,21 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            )}
+
             {/* Shipping info */}
             <div className="bg-stone-50 rounded-lg p-4 mb-6 space-y-2">
               <div className="flex items-center gap-2 text-sm">
-                <Truck className="w-4 h-4 text-banjaran-700 flex-shrink-0" />
+                {pickup ? <Store className="w-4 h-4 text-banjaran-700 flex-shrink-0" /> : <Truck className="w-4 h-4 text-banjaran-700 flex-shrink-0" />}
                 <span className="text-stone-600">
-                  {shippingCost === 0
+                  {pickup
+                    ? `Free self pickup in ${pickupLocation}. We'll WhatsApp or email you to arrange collection.`
+                    : shippingCost === 0
                     ? 'Free shipping on your order!'
                     : `Shipping: ${formatPrice(shippingCost)} (${['Sabah', 'Sarawak', 'WP Labuan'].includes(form.state) ? 'East Malaysia' : 'West Malaysia'})`}
                 </span>
               </div>
-              {shippingCost > 0 && total < 150 && (
+              {!pickup && shippingCost > 0 && total < 150 && (
                 <p className="text-xs text-stone-400 ml-6">
                   Add {formatPrice(150 - total)} more for free shipping
                 </p>
@@ -254,11 +299,14 @@ export default function CheckoutPage() {
                   <span>{formatPrice(total)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-stone-500">Shipping</span>
+                  <span className="text-stone-500">{shippingLabel}</span>
                   <span>{shippingCost === 0 ? 'FREE' : formatPrice(shippingCost)}</span>
                 </div>
-                {shippingCost === 0 && (
+                {!pickup && shippingCost === 0 && (
                   <p className="text-xs text-banjaran-700">Free shipping on orders above RM150</p>
+                )}
+                {pickupLocation && (
+                  <p className="text-xs text-banjaran-700">Collect in {pickupLocation}</p>
                 )}
                 <div className="flex justify-between font-semibold text-base pt-2 border-t border-stone-200">
                   <span>Total</span>
