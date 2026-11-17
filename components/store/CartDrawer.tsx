@@ -2,12 +2,13 @@
 import { Minus, Plus, X, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useCart } from '@/store/cart'
+import { useCart, cartTotal } from '@/store/cart'
 import { formatPrice } from '@/lib/utils'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet'
 
 export default function CartDrawer() {
-  const { items, isOpen, closeCart, removeItem, updateQuantity, total } = useCart()
+  const { items, isOpen, closeCart, removeItem, updateQuantity } = useCart()
+  const total = cartTotal(items)
 
   return (
     <Sheet open={isOpen} onOpenChange={closeCart}>

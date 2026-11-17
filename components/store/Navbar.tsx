@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { ShoppingBag, Menu, Home, Search, BookOpen, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { useCart } from '@/store/cart'
+import { useCart, cartCount } from '@/store/cart'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet'
 import { cn } from '@/lib/cn'
 
@@ -24,7 +24,8 @@ const bottomTabItems = [
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { itemCount, openCart } = useCart()
+  const { items, openCart } = useCart()
+  const itemCount = cartCount(items)
   const pathname = usePathname()
 
   const [badgeKey, setBadgeKey] = useState(0)

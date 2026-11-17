@@ -24,8 +24,6 @@ interface CartStore {
   clearCart: () => void
   openCart: () => void
   closeCart: () => void
-  get total(): number
-  get itemCount(): number
 }
 
 export const useCart = create<CartStore>()(
@@ -33,14 +31,6 @@ export const useCart = create<CartStore>()(
     (set, get) => ({
       items: [],
       isOpen: false,
-
-      get total() {
-        return get().items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-      },
-
-      get itemCount() {
-        return get().items.reduce((sum, item) => sum + item.quantity, 0)
-      },
 
       addItem: (newItem) =>
         set((state) => {
@@ -82,3 +72,9 @@ export const useCart = create<CartStore>()(
     }
   )
 )
+
+// Derived values. Zustand copies getters once at creation, so compute these from items instead.
+export const cartTotal = (items: CartItem[]) =>
+  items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+export const cartCount = (items: CartItem[]) =>
+  items.reduce((sum, item) => sum + item.quantity, 0)

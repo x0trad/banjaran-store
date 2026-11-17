@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCart } from '@/store/cart'
+import { useCart, cartTotal } from '@/store/cart'
 import { formatPrice, calculateShipping } from '@/lib/utils'
 import { ChevronLeft, Lock, Truck, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -17,7 +17,8 @@ const STATES = [
 ]
 
 export default function CheckoutPage() {
-  const { items, total } = useCart()
+  const { items } = useCart()
+  const total = cartTotal(items)
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({
