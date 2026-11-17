@@ -1,8 +1,8 @@
 'use client'
 import AdminLayout from '@/components/admin/AdminLayout'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Plus, Trash2, ArrowLeft } from 'lucide-react'
+import { Plus, Trash2, ArrowLeft, GripVertical, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,8 @@ export default function ProductFormPage() {
   const router = useRouter()
   const isNew = id === 'new'
 
+  const dragIndex = useRef<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [form, setForm] = useState({
     name: '', description: '', price: '', comparePrice: '',
     category: 'tee', images: [] as string[], tags: '', featured: false, published: true,
@@ -87,6 +89,13 @@ export default function ProductFormPage() {
 
   const addImage = () => setForm({ ...form, images: [...form.images, ''] })
   const removeImage = (i: number) => setForm({ ...form, images: form.images.filter((_, j) => j !== i) })
+  const moveImage = (from: number, to: number) => {
+    if (from === to || from < 0 || to < 0) return
+    const images = [...form.images]
+    const [moved] = images.splice(from, 1)
+    images.splice(to, 0, moved)
+    setForm({ ...form, images })
+  }
   const setImage = (i: number, url: string) => {
     const images = [...form.images]
     images[i] = url
@@ -186,7 +195,7 @@ export default function ProductFormPage() {
           <CardHeader className="px-4 py-3 border-b border-stone-100 flex-row items-center justify-between">
             <div>
               <CardTitle className="text-sm font-semibold">Images</CardTitle>
-              <p className="text-xs text-stone-400 mt-0.5">First = main image</p>
+              <p className="text-xs text-stone-400 mt-0.5">Drag to reorder · first = main image</p>
             </div>
           </CardHeader>
           <CardContent className="px-4 py-4">
@@ -199,14 +208,51 @@ export default function ProductFormPage() {
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 {form.images.map((img, i) => (
-                  <div key={i} className="space-y-1">
+                  <div
+                    key={img || `empty-${i}`}
+                    draggable={!!img}
+                    onDragStart={(e) => {
+                      dragIndex.current = i
+                      e.dataTransfer.effectAllowed = 'move'
+                      e.dataTransfer.setData('text/x-image-index', String(i))
+                    }}
+                    onDragOver={(e) => {
+                      if (dragIndex.current === null) return
+                      e.preventDefault()
+                      setDragOverIndex(i)
+                    }}
+                    onDragLeave={() => setDragOverIndex((cur) => (cur === i ? null : cur))}
+                    onDrop={(e) => {
+                      if (dragIndex.current === null) return
+                      e.preventDefault()
+                      moveImage(dragIndex.current, i)
+                      dragIndex.current = null
+                      setDragOverIndex(null)
+                    }}
+                    onDragEnd={() => { dragIndex.current = null; setDragOverIndex(null) }}
+                    className={`space-y-1 rounded-lg transition-shadow ${img ? 'cursor-grab active:cursor-grabbing' : ''} ${dragOverIndex === i ? 'ring-2 ring-banjaran-500 ring-offset-2' : ''}`}
+                  >
                     <ImageUpload
                       value={img}
                       onChange={(url) => setImage(i, url)}
                       onRemove={() => removeImage(i)}
                       placeholder={i === 0 ? 'Main image' : `Image ${i + 1}`}
                     />
-                    {i === 0 && <p className="text-[10px] text-center text-banjaran-700 font-medium">Main</p>}
+                    <div className="flex items-center justify-between gap-1 text-[10px]">
+                      <span className="flex items-center gap-1 text-stone-400">
+                        {img && <GripVertical className="w-3 h-3" aria-hidden="true" />}
+                        {i === 0 ? <span className="text-banjaran-700 font-medium">Main</span> : `#${i + 1}`}
+                      </span>
+                      {i > 0 && img && (
+                        <button
+                          type="button"
+                          onClick={() => moveImage(i, 0)}
+                          className="flex items-center gap-1 text-banjaran-700 font-medium touch-manipulation"
+                        >
+                          <Star className="w-3 h-3" aria-hidden="true" /> Make main
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 <button
