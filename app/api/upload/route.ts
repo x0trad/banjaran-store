@@ -52,7 +52,6 @@ export async function POST(req: NextRequest) {
     uploadFormData.append('timestamp', String(timestamp))
     uploadFormData.append('signature', signature)
     uploadFormData.append('folder', folder)
-    uploadFormData.append('transformation', 'q_auto,f_auto,w_1200')
 
     const uploadRes = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
@@ -68,8 +67,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Store the original; resize/compress at delivery (max 1200px wide, auto quality + format).
+    // Upload-time transformations must be signed, and f_auto only works on delivery URLs.
+    const url = String(uploadData.secure_url).replace('/image/upload/', '/image/upload/c_limit,w_1200,q_auto,f_auto/')
+
     return NextResponse.json({
-      url: uploadData.secure_url,
+      url,
       publicId: uploadData.public_id,
       width: uploadData.width,
       height: uploadData.height,
