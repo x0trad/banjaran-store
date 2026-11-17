@@ -60,6 +60,11 @@ export async function POST(req: NextRequest) {
     const shippingCost = pickup ? 0 : calculateShipping(subtotal, customerInfo?.state)
     const total = subtotal + shippingCost
 
+    // Stripe's minimum charge for MYR card payments
+    if (total < 2) {
+      return NextResponse.json({ error: 'Minimum order total for card payment is RM 2.00' }, { status: 400 })
+    }
+
     const orderNumber = generateOrderNumber()
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -152,8 +157,12 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json({ url: session.url, sessionId: session.id })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Checkout error:', error)
+    // Stripe request errors carry a customer-safe message (e.g. amount too small)
+    if (error?.type === 'StripeInvalidRequestError' && error?.message) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
     return NextResponse.json({ error: 'Failed to create checkout session' }, { status: 500 })
   }
 }
