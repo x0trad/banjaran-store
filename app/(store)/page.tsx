@@ -38,7 +38,9 @@ export default async function HomePage() {
         <div className="absolute inset-0 z-0">
           <div
             className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: "url('/hero-mountain.jpg')", filter: 'brightness(0.8) grayscale(15%)' }}
+            style={{ backgroundImage: "url('/hero-banjaran.jpg')", filter: 'brightness(0.85)' }}
+            role="img"
+            aria-label="Two hikers running up a grassy hill wearing Banjaran Carabiner and Titiwangsa tees"
           />
         </div>
         {/* Gradient overlay */}
