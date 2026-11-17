@@ -118,9 +118,9 @@ export default async function HomePage() {
         <div className="space-y-6">
           <div
             className="w-full aspect-video bg-surface-container overflow-hidden"
-            style={{ backgroundImage: "url('/hero-mountain.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', filter: 'grayscale(30%)' }}
+            style={{ backgroundImage: "url('/journal-climb.webp')", backgroundSize: 'cover', backgroundPosition: 'center' }}
             role="img"
-            aria-label="Misty Malaysian highland ridge"
+            aria-label="Climber in a Banjaran Titiwangsa tee bouldering on a jungle overhang"
           />
           <div className="space-y-4">
             <p className="label-caps text-primary">Banjaran Journal</p>
